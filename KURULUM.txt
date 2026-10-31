@@ -1,0 +1,34 @@
+ROBO TEACHERS - PWA EK DOSYALARI
+
+Bu pakette:
+- manifest.webmanifest: uygulama adı, simgesi ve tam ekran açılış ayarları
+- sw.js: temel çevrimdışı önbellek desteği
+- icon-192.png ve icon-512.png: uygulama simgeleri
+
+KURULUM:
+1. Mevcut Robo Teachers HTML kodunu index.html adıyla kaydet.
+2. Bu paketteki dört dosyayı index.html ile aynı klasöre koy.
+3. index.html dosyasının <head> bölümünde, </head> satırından önce şunları ekle:
+
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#050505">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+4. HTML dosyasında </body> satırından hemen önce şunu ekle:
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(console.error);
+  });
+}
+</script>
+
+5. Beş dosyayı birlikte HTTPS destekleyen bir web barındırma hizmetinde yayımla.
+   Service Worker, iPad'de yerel dosya olarak açıldığında çalışmaz.
+6. Yayımlanan adresi iPad Safari'de aç. Paylaş > Ana Ekrana Ekle yolunu kullan.
+
+NOT:
+- Puanların localStorage ile saklanır. Aynı tarayıcı/site verileri silinmediği sürece korunur.
+- İlk çevrimiçi açılıştan sonra önbelleğe alınan dosyalar çevrimdışı da açılabilir.
+- Kodun tamamı index.html içinde olmalıdır; CodePen'deki HTML/CSS/JS panellerine ayrı ayrı bölme.
