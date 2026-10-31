@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050505">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Robo Teachers">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Robo Teachers</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:12px;background:#050505;color:white;font-family:Arial,sans-serif;text-align:center}
+#app{max-width:850px;min-height:600px;margin:12px auto;padding:18px;border:2px solid #ff1744;border-radius:20px;box-shadow:0 0 25px #ff174455}
+h1{color:#ff1744;text-shadow:0 0 14px #ff1744;font-size:clamp(27px,6vw,43px)}
+h2{color:#ff526f}
+.robot{font-size:70px;margin:14px}
+.screen{display:none}
+.panel{background:#171717;border:1px solid #ff1744;border-radius:14px;padding:20px;margin:18px auto;max-width:650px;text-align:left;line-height:1.8}
+button{background:#ff1744;color:white;border:0;border-radius:9px;padding:13px 18px;margin:7px;font-weight:bold;font-size:15px;cursor:pointer}
+button:hover{box-shadow:0 0 15px #ff1744}
+button:disabled{opacity:.4}
+.secondary{background:#292929;border:1px solid #ff1744}
+.option{display:block;width:95%;max-width:550px;margin:12px auto;background:#171717;border:1px solid #ff1744}
+#feedback{min-height:45px;font-weight:bold;line-height:1.6}
+#progress{color:#ff718a}
+.small{color:#aaa;font-size:13px}
+.scorebar{background:#171717;border:1px solid #ff1744;border-radius:12px;padding:12px;margin:12px auto;max-width:350px;color:#ff718a;font-weight:bold}
+.score{font-size:25px;color:#fff}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="scorebar">🏆 TOPLAM PUAN: <span class="score" id="totalScore">0</span></div>
+
+<section id="home">
+<h1>ROBO TEACHERS</h1><div class="robot">🤖</div>
+<div class="panel">Merhaba! Ben Robo Teacher.<br>İngilizceyi hiç bilmiyor musun? Hiç sorun değil! Sana en baştan, adım adım İngilizce öğreteceğim.<br><br>Hazırsan öğrenmeye başlayalım!</div>
+<button onclick="show('levels')">ÖĞRENMEYE BAŞLA</button>
+<button class="secondary" onclick="show('how')">NASIL KULLANILIR?</button>
+</section>
+
+<section id="how" class="screen">
+<h1>NASIL KULLANILIR?</h1><div class="robot">🤖</div>
+<div class="panel">1. Kolay, Orta veya Zor seviyesini seç.<br>2. Konu anlatımını oku.<br>3. İngilizce örnekleri incele.<br>4. Kısa tekrar yap.<br>5. Testi çöz.<br><br>Doğru cevaplardan puan kazanırsın!<br>Bir konuyu bitirince bonus, seviyeyi bitirince ekstra puan alırsın.<br><br>Yanlış cevap verirsen doğru cevabı öğrenip devam edebilirsin. Hiçbir seviye kilitli değil!</div>
+<button onclick="show('home')">ANA MENÜ</button>
+</section>
+
+<section id="levels" class="screen">
+<h1>SEVİYE SEÇ</h1><div class="robot">🤖</div>
+<div class="panel">İstediğin seviyeden başlayabilirsin. Bütün seviyeler açık!</div>
+<button onclick="selectLevel(0)">🟢 KOLAY</button><button onclick="selectLevel(1)">🟡 ORTA</button><button onclick="selectLevel(2)">🔴 ZOR</button><br>
+<button class="secondary" onclick="show('home')">ANA MENÜ</button>
+</section>
+
+<section id="lessons" class="screen">
+<h1 id="lessonListTitle">KONULAR</h1><div class="robot">📚</div><div id="lessonButtons"></div>
+<button class="secondary" onclick="show('levels')">SEVİYE SEÇ</button>
+</section>
+
+<section id="lesson" class="screen">
+<h1>KONU ANLATIMI</h1><div class="robot">🤖</div>
+<div class="panel"><h2 id="topicTitle"></h2><div id="topicContent"></div></div>
+<button onclick="showExamples()">ÖRNEKLERİ GÖR →</button><button class="secondary" onclick="show('lessons')">KONULARA DÖN</button>
+</section>
+
+<section id="examples" class="screen">
+<h1>ÖRNEKLER</h1><div class="robot">📖</div><div class="panel" id="examplesContent"></div>
+<button onclick="showReview()">KISA TEKRAR →</button>
+</section>
+
+<section id="review" class="screen">
+<h1>KISA TEKRAR</h1><div class="robot">🧠</div><div class="panel" id="reviewContent"></div>
+<button onclick="beginQuiz()">TESTE BAŞLA →</button>
+</section>
+
+<section id="quiz" class="screen">
+<h2 id="quizTitle"></h2><div class="robot">🤖</div>
+<div class="panel"><div id="question"></div><div id="progress"></div></div>
+<div id="answers"></div><div id="feedback"></div>
+<button id="nextBtn" onclick="nextQuestion()" style="display:none">SONRAKİ SORU →</button>
+</section>
+
+<section id="result" class="screen">
+<h1>DERS TAMAMLANDI!</h1><div class="robot">🎉</div><div class="panel" id="resultText"></div>
+<button onclick="nextLesson()">SONRAKİ KONU →</button>
+<button class="secondary" onclick="show('lessons')">KONULARA DÖN</button>
+<button class="secondary" onclick="show('levels')">SEVİYE SEÇ</button>
+</section>
+</div>
+
+<script>
+const screens=["home","how","levels","lessons","lesson","examples","review","quiz","result"];
+function show(id){
+ screens.forEach(s=>document.getElementById(s).style.display="none");
+ document.getElementById(id).style.display="block";
+ updateScore(); window.scrollTo(0,0);
+}
+let totalScore=Number(localStorage.getItem("roboTeachersScore"))||0;
+let earnedLessons=JSON.parse(localStorage.getItem("roboTeachersLessons")||"[]");
+let completedLevels=JSON.parse(localStorage.getItem("roboTeachersLevels")||"[]");
+let quizCorrect=0;
+function updateScore(){document.getElementById("totalScore").textContent=totalScore;}
+function addPoints(points){
+ totalScore+=points;localStorage.setItem("roboTeachersScore",totalScore);updateScore();
+}
+function lessonKey(){return currentLevel+"-"+currentLesson;}
+function finishLesson(){
+ const key=lessonKey();let bonus=0;
+ if(!earnedLessons.includes(key)){
+  earnedLessons.push(key);localStorage.setItem("roboTeachersLessons",JSON.stringify(earnedLessons));
+  addPoints(20);bonus=20;
+ }
+ const allLessons=courses[currentLevel].lessons.length;
+ const completedCount=earnedLessons.filter(k=>k.startsWith(currentLevel+"-")).length;
+ let levelBonus=0;
+ if(completedCount===allLessons&&!completedLevels.includes(currentLevel)){
+  completedLevels.push(currentLevel);localStorage.setItem("roboTeachersLevels",JSON.stringify(completedLevels));
+  addPoints(50);levelBonus=50;
+ }
+ return {bonus,levelBonus};
+}
+const courses=[
+{ name:"KOLAY", lessons:[
+{title:"1. İngilizce Alfabesi ve İlk Kelimeler",content:"İngilizcede 26 harf bulunur. İngilizce öğrenirken önce harfleri ve basit kelimeleri tanıyalım.<br><br><b>Sesli harfler:</b> A, E, I, O, U.<br><br>Şimdi bazı temel kelimeleri öğrenelim:<br>Apple = Elma<br>Book = Kitap<br>Cat = Kedi<br>Dog = Köpek<br>Fish = Balık",examples:"Apple – Elma<br>Book – Kitap<br>Cat – Kedi<br>Dog – Köpek<br>Fish – Balık<br>House – Ev<br>Water – Su",review:"İngilizcede 26 harf vardır.<br><br>Apple = Elma<br>Book = Kitap<br>Cat = Kedi<br>Dog = Köpek<br>Water = Su",questions:[
+["Elmanın İngilizcesi hangi harfle başlar?",["A","E","O"],0,"Elma İngilizcede Apple demektir. Apple A harfiyle başlar."],
+["Kitabın İngilizcesi hangisidir?",["Cat","Book","Fish"],1,"Book, kitap demektir."],
+["Kedinin İngilizcesi hangisidir?",["Dog","Apple","Cat"],2,"Cat, kedi demektir."],
+["Köpeğin İngilizcesi hangisidir?",["Fish","Dog","Book"],1,"Dog, köpek demektir."],
+["Suyun İngilizcesi hangisidir?",["Water","House","Apple"],0,"Water, su demektir."]]},
+{title:"2. Selamlaşma",content:"İngilizcede insanlarla karşılaşınca selamlaşırız.<br><br>Hello = Merhaba<br>Hi = Selam<br>Good morning = Günaydın<br>Good evening = İyi akşamlar<br>Good night = İyi geceler<br>Goodbye = Hoşça kal<br><br>Birine nasıl olduğunu sormak için How are you? deriz.",examples:"Hello! – Merhaba!<br>Hi! – Selam!<br>Good morning! – Günaydın!<br>How are you? – Nasılsın?<br>I am fine. – İyiyim.<br>Goodbye! – Hoşça kal!",review:"Hello = Merhaba<br>Good morning = Günaydın<br>How are you? = Nasılsın?<br>I am fine = İyiyim.<br>Goodbye = Hoşça kal.",questions:[
+["'Merhaba' kelimesinin İngilizcesi hangisidir?",["Hello","Goodbye","Night"],0,"Hello, merhaba demektir."],
+["'Günaydın' İngilizcede nasıl söylenir?",["Good evening","Good morning","Good night"],1,"Good morning, günaydın demektir."],
+["'Nasılsın?' İngilizcede hangisidir?",["How old are you?","How are you?","Who are you?"],1,"How are you?, nasılsın demektir."],
+["'İyiyim' İngilizcede hangisidir?",["I am fine","I am bad","Good night"],0,"I am fine, iyiyim demektir."],
+["'Hoşça kal' hangisidir?",["Hello","Hi","Goodbye"],2,"Goodbye, hoşça kal demektir."]]},
+{title:"3. Sayılar",content:"Şimdi 1'den 10'a kadar sayıları öğrenelim.<br><br>One = Bir<br>Two = İki<br>Three = Üç<br>Four = Dört<br>Five = Beş<br>Six = Altı<br>Seven = Yedi<br>Eight = Sekiz<br>Nine = Dokuz<br>Ten = On",examples:"One – 1<br>Two – 2<br>Three – 3<br>Four – 4<br>Five – 5<br>Six – 6<br>Seven – 7<br>Eight – 8<br>Nine – 9<br>Ten – 10",review:"One = 1<br>Two = 2<br>Three = 3<br>Four = 4<br>Five = 5<br>Six = 6<br>Seven = 7<br>Eight = 8<br>Nine = 9<br>Ten = 10",questions:[
+["'Beş' sayısının İngilizcesi hangisidir?",["Four","Five","Six"],1,"Five, beş demektir."],
+["'Üç' sayısının İngilizcesi hangisidir?",["Two","Three","Four"],1,"Three, üç demektir."],
+["'Sekiz' sayısının İngilizcesi hangisidir?",["Seven","Eight","Nine"],1,"Eight, sekiz demektir."],
+["'On' sayısının İngilizcesi hangisidir?",["Ten","Two","Twelve"],0,"Ten, on demektir."],
+["'Yedi' sayısının İngilizcesi hangisidir?",["Six","Seven","Eight"],1,"Seven, yedi demektir."]]},
+{title:"4. Zamirler",content:"Zamirler, isimlerin yerine kullanılır.<br><br>I = Ben<br>You = Sen / Siz<br>He = O (erkek)<br>She = O (kadın)<br>It = O (hayvan veya cansız varlık)<br>We = Biz<br>They = Onlar",examples:"I am a student. – Ben öğrenciyim.<br>You are kind. – Sen naziksin.<br>He is happy. – O mutlu.<br>She is a teacher. – O öğretmen.<br>It is a cat. – O bir kedi.<br>We are friends. – Biz arkadaşız.<br>They are students. – Onlar öğrenciler.",review:"I = Ben<br>You = Sen / Siz<br>He = Erkek için o<br>She = Kadın için o<br>It = Hayvan veya cansız varlık için o<br>We = Biz<br>They = Onlar",questions:[
+["'Ben' zamirinin İngilizcesi hangisidir?",["I","You","We"],0,"I, ben demektir."],
+["Erkek için kullanılan 'o' zamiri hangisidir?",["She","He","It"],1,"He, erkekler için kullanılan o zamiridir."],
+["'Biz' zamirinin İngilizcesi hangisidir?",["They","You","We"],2,"We, biz demektir."],
+["Kadın için kullanılan 'o' zamiri hangisidir?",["She","He","It"],0,"She, kadınlar için kullanılan o zamiridir."],
+["'Onlar' zamirinin İngilizcesi hangisidir?",["We","They","I"],1,"They, onlar demektir."]]},
+{title:"5. Am / Is / Are",content:"Am, is ve are İngilizcede 'to be' fiilinin biçimleridir. Cümleye göre 'olmak' anlamı verir.<br><br>I → AM<br>He / She / It → IS<br>You / We / They → ARE<br><br>Özneye göre doğru kelimeyi seçeriz.",examples:"I am happy. – Ben mutluyum.<br>She is a student. – O bir öğrenci.<br>He is tall. – O uzun boylu.<br>We are friends. – Biz arkadaşız.<br>They are at home. – Onlar evde.",review:"I AM<br>He / She / It IS<br>You / We / They ARE<br><br>I am happy = Ben mutluyum.",questions:[
+["I ___ a student. (Ben bir öğrenciyim.)",["am","is","are"],0,"I ile am kullanılır."],
+["She ___ happy. (O mutlu.)",["am","is","are"],1,"She ile is kullanılır."],
+["They ___ friends. (Onlar arkadaş.)",["am","is","are"],2,"They ile are kullanılır."],
+["He ___ my brother. (O benim erkek kardeşim.)",["are","is","am"],1,"He ile is kullanılır."],
+["We ___ at school. (Biz okuldayız.)",["is","are","am"],1,"We ile are kullanılır."]]},
+{title:"6. Renkler",content:"Renklerin İngilizce karşılıklarını öğrenelim.<br><br>Red = Kırmızı<br>Blue = Mavi<br>Green = Yeşil<br>Yellow = Sarı<br>Black = Siyah<br>White = Beyaz<br>Pink = Pembe<br>Purple = Mor<br>Orange = Turuncu<br>Brown = Kahverengi",examples:"The sky is blue. – Gökyüzü mavidir.<br>The apple is red. – Elma kırmızıdır.<br>The grass is green. – Çimen yeşildir.<br>The sun is yellow. – Güneş sarıdır.",review:"Red = Kırmızı<br>Blue = Mavi<br>Green = Yeşil<br>Yellow = Sarı<br>Black = Siyah<br>White = Beyaz",questions:[
+["'Mavi' renginin İngilizcesi hangisidir?",["Red","Blue","Green"],1,"Blue, mavi demektir."],
+["'Kırmızı' renginin İngilizcesi hangisidir?",["Red","Yellow","Purple"],0,"Red, kırmızı demektir."],
+["'Yeşil' renginin İngilizcesi hangisidir?",["Blue","Black","Green"],2,"Green, yeşil demektir."],
+["'Sarı' renginin İngilizcesi hangisidir?",["Yellow","Pink","White"],0,"Yellow, sarı demektir."],
+["'Siyah' renginin İngilizcesi hangisidir?",["White","Black","Orange"],1,"Black, siyah demektir."]]}
+]},
+{name:"ORTA",lessons:[
+{title:"1. Geniş Zaman",content:"Simple Present Tense, alışkanlıkları ve düzenli yapılan işleri anlatır.<br><br>I play football. = Futbol oynarım.<br>She reads books. = O kitap okur.<br><br>He, She ve It ile olumlu cümlelerde fiile genellikle -s eklenir.",examples:"I go to school. – Okula giderim.<br>She likes music. – O müziği sever.<br>They play tennis. – Onlar tenis oynar.",review:"I / You / We / They → play<br>He / She / It → plays<br>Geniş zaman alışkanlıkları anlatır.",questions:[
+["'Ben futbol oynarım' cümlesi hangisidir?",["I plays football.","I play football.","I playing football."],1,"I ile fiilin yalın hâli kullanılır: I play football."],
+["'O kitap okur' cümlesi hangisidir?",["She read books.","She reads books.","She reading books."],1,"She ile olumlu geniş zamanda fiile -s eklenir."],
+["'O okula gider' cümlesi hangisidir?",["He go to school.","He goes to school.","He going to school."],1,"He ile go fiili goes olur."],
+["'Onlar tenis oynar' cümlesi hangisidir?",["They plays tennis.","They play tennis.","They playing tennis."],1,"They ile play kullanılır."],
+["'Ben müziği severim' cümlesi hangisidir?",["I likes music.","I like music.","I liking music."],1,"I ile like kullanılır."]]},
+{title:"2. Şimdiki Zaman",content:"Present Continuous şu anda gerçekleşen olayları anlatır.<br><br>Formül: AM / IS / ARE + fiil-ing<br><br>I am reading. = Kitap okuyorum.<br>She is sleeping. = O uyuyor.<br>They are playing. = Onlar oynuyor.",examples:"I am eating. – Yemek yiyorum.<br>He is running. – O koşuyor.<br>We are studying. – Ders çalışıyoruz.",review:"AM / IS / ARE + fiil-ing<br>Şu anda yapılan işleri anlatır.",questions:[
+["'Ben kitap okuyorum' hangisidir?",["I reading a book.","I am reading a book.","I reads a book."],1,"I am reading a book, ben kitap okuyorum demektir."],
+["'O uyuyor' hangisidir?",["She is sleeping.","She sleep.","She are sleeping."],0,"She is sleeping, o uyuyor demektir."],
+["'Onlar oynuyor' hangisidir?",["They is playing.","They playing.","They are playing."],2,"They ile are kullanılır."],
+["'O koşuyor' hangisidir?",["He is running.","He runs yesterday.","He are running."],0,"He is running, o koşuyor demektir."],
+["'Biz ders çalışıyoruz' hangisidir?",["We studying.","We are studying.","We is studying."],1,"We are studying, biz ders çalışıyoruz demektir."]]},
+{title:"3. Geçmiş Zaman",content:"Simple Past geçmişte tamamlanmış olayları anlatır.<br><br>Düzenli fiillere genellikle -ed eklenir.<br>Play → Played<br>Walk → Walked<br><br>Düzensiz fiiller değişir:<br>Go → Went<br>Eat → Ate<br>See → Saw",examples:"I played football yesterday. – Dün futbol oynadım.<br>She went home. – O eve gitti.<br>We watched a film. – Film izledik.",review:"Düzenli fiil: fiil + ed<br>Go → Went<br>Eat → Ate<br>See → Saw",questions:[
+["'Gitmek' fiilinin geçmiş hâli hangisidir?",["Goed","Went","Going"],1,"Go fiilinin geçmiş hâli went'tir."],
+["'Oynadım' hangisidir?",["Played","Playing","Plays"],0,"Play fiilinin geçmiş hâli played olur."],
+["'Yemek' fiilinin geçmiş hâli hangisidir?",["Eated","Ate","Eating"],1,"Eat fiilinin geçmiş hâli ate'dir."],
+["'Dün film izledim' hangisidir?",["I watch a film yesterday.","I watched a film yesterday.","I watching a film yesterday."],1,"Yesterday geçmiş zamanı belirtir. Watched kullanılır."],
+["'Gördüm' hangisidir?",["Saw","Seed","Seeing"],0,"See fiilinin geçmiş hâli saw'dır."]]},
+{title:"4. A / An",content:"A ve an, tekil isimlerden önce kullanılır ve genellikle 'bir' anlamına gelir.<br><br>A: Ünsüz sesle başlayan kelimelerden önce.<br>An: Sesli sesle başlayan kelimelerden önce.<br><br>Önemli: Harfe değil, kelimenin başlangıç sesine bakarız.",examples:"A book – Bir kitap<br>A cat – Bir kedi<br>An apple – Bir elma<br>An egg – Bir yumurta<br>An orange – Bir portakal",review:"A + ünsüz ses<br>An + sesli ses<br><br>A book<br>An apple",questions:[
+["'Bir elma' hangisidir?",["A apple","An apple","The apple"],1,"Apple sesli sesle başladığı için an kullanılır."],
+["'Bir kitap' hangisidir?",["An book","A book","Are book"],1,"Book ünsüz sesle başladığı için a kullanılır."],
+["'Bir portakal' hangisidir?",["A orange","An orange","Is orange"],1,"Orange sesli sesle başladığı için an kullanılır."],
+["'Bir kedi' hangisidir?",["An cat","A cat","Am cat"],1,"Cat ünsüz sesle başladığı için a kullanılır."],
+["'Bir yumurta' hangisidir?",["A egg","An egg","The egg"],1,"Egg sesli sesle başladığı için an kullanılır."]]}
+]},
+{name:"ZOR",lessons:[
+{title:"1. Gelecek Zaman",content:"Will, gelecekle ilgili tahminler ve anlık kararlar için kullanılır.<br><br>Formül: Özne + will + fiil<br><br>I will study. = Ders çalışacağım.<br>She will come. = O gelecek.",examples:"I will travel tomorrow. – Yarın seyahat edeceğim.<br>It will rain. – Yağmur yağacak.<br>We will help you. – Sana yardım edeceğiz.",review:"Will + fiilin yalın hâli.<br>He will go.<br>They will play.",questions:[
+["'Sana yardım edeceğim' hangisidir?",["I will help you.","I helped you.","I helping you."],0,"Gelecek zaman için will kullanılır."],
+["'O yarın gelecek' hangisidir?",["She will comes tomorrow.","She will come tomorrow.","She coming tomorrow."],1,"Will'den sonra fiilin yalın hâli gelir: come."],
+["'Yağmur yağacak' hangisidir?",["It will rain.","It raining.","It rained tomorrow."],0,"It will rain, yağmur yağacak demektir."],
+["'Onlar futbol oynayacak' hangisidir?",["They will played football.","They will play football.","They will playing football."],1,"Will'den sonra play kullanılır."],
+["'Yarın seyahat edeceğim' hangisidir?",["I travel yesterday.","I will travel tomorrow.","I travelling tomorrow."],1,"Will travel, seyahat edeceğim anlamındadır."]]},
+{title:"2. Present Perfect",content:"Present Perfect, geçmişte gerçekleşmiş ama şu anla bağlantısı bulunan olayları anlatır.<br><br>Formül: HAVE / HAS + fiilin üçüncü hâli<br><br>I have eaten. = Yemek yedim.<br>She has gone. = O gitti.",examples:"I have finished my homework. – Ödevimi bitirdim.<br>She has visited Paris. – Paris'i ziyaret etti.<br>We have seen this film. – Bu filmi gördük.",review:"I / You / We / They → HAVE<br>He / She / It → HAS<br>Have / Has + V3",questions:[
+["'O ödevini bitirdi' hangisidir?",["She have finished her homework.","She has finished her homework.","She finishing homework."],1,"She ile has kullanılır."],
+["'Ben yemek yedim' hangisidir?",["I have eaten.","I has eaten.","I eating."],0,"I ile have kullanılır."],
+["'Onlar Londra'yı ziyaret etti' hangisidir?",["They has visited London.","They have visited London.","They visiting London."],1,"They ile have kullanılır."],
+["'O eve gitti' hangisidir?",["He has gone home.","He have go home.","He going home."],0,"He ile has kullanılır. Go fiilinin üçüncü hâli gone'dır."],
+["'Biz bu filmi gördük' hangisidir?",["We has seen this film.","We have seen this film.","We seeing this film."],1,"We ile have kullanılır."]]},
+{title:"3. Passive Voice",content:"Passive Voice, işi yapan kişiden çok yapılan işe odaklanır.<br><br>Active: Someone cleans the room. = Biri odayı temizler.<br>Passive: The room is cleaned. = Oda temizlenir.<br><br>Formül: BE + fiilin üçüncü hâli.",examples:"The cake was made. – Pasta yapıldı.<br>The book is written. – Kitap yazılır.<br>The window was broken. – Pencere kırıldı.",review:"Passive Voice = BE + V3<br>is cleaned<br>was made<br>will be built",questions:[
+["'Oda her gün temizlenir' hangisidir?",["The room is cleaned every day.","The room clean every day.","The room are clean."],0,"The room tekil olduğu için is kullanılır."],
+["'Pasta yapıldı' hangisidir?",["The cake make.","The cake was made.","The cake making."],1,"Was made, yapıldı anlamındadır."],
+["'Mektuplar dün gönderildi' hangisidir?",["The letters was sent.","The letters were sent yesterday.","The letters is sent."],1,"Letters çoğul olduğu için were kullanılır."],
+["'Bina inşa edilecek' hangisidir?",["The building will built.","The building will be built.","The building will building."],1,"Gelecek zamanda edilgen yapı will be + V3 olur."],
+["'Burada İngilizce konuşulur' hangisidir?",["English is spoken here.","English are spoken here.","English speak here."],0,"English tekil kabul edilir; is spoken kullanılır."]]},
+{title:"4. Koşul Cümleleri",content:"Conditionals, bir olayın başka bir olaya bağlı olduğunu anlatır.<br><br>Zero Conditional: Genel gerçekler.<br>If you heat ice, it melts. = Buzu ısıtırsan erir.<br><br>First Conditional: Gerçekleşmesi mümkün gelecek durumları.<br>If it rains, I will stay home. = Yağmur yağarsa evde kalacağım.<br><br>Second Conditional: Hayali durumları.<br>If I were rich, I would travel. = Zengin olsaydım seyahat ederdim.",examples:"If you heat ice, it melts. – Buzu ısıtırsan erir.<br>If it rains, I will stay home. – Yağmur yağarsa evde kalacağım.<br>If I were rich, I would travel. – Zengin olsaydım seyahat ederdim.",review:"Zero: Genel gerçekler.<br>First: Gerçekleşmesi mümkün gelecek ihtimalleri.<br>Second: Hayali durumlar.",questions:[
+["'Buzu ısıtırsan erir' hangisidir?",["If you heat ice, it melts.","If you heated ice, it melt.","If you heat ice, it melting."],0,"Genel gerçeklerde Zero Conditional kullanılır."],
+["'Yağmur yağarsa evde kalacağım' hangisidir?",["If it rains, I will stay home.","If it rain, I stayed home.","If it raining, I stay home."],0,"First Conditional yapısı If + geniş zaman, will + fiildir."],
+["'Zengin olsaydım seyahat ederdim' hangisidir?",["If I am rich, I travel.","If I were rich, I would travel.","If I will rich, I travel."],1,"Second Conditional hayali durumları anlatır."],
+["'Su 100 dereceye ulaşırsa kaynar' hangisidir?",["If water reaches 100°C, it boils.","If water reach 100°C, it boil.","If water reached 100°C, it boiling."],0,"Bilimsel ve genel gerçeklerde Zero Conditional kullanılır."],
+["'Çalışırsa sınavı geçecek' hangisidir?",["If she studies, she will pass.","If she study, she passed.","If she studying, she pass."],0,"Mümkün gelecek ihtimali için First Conditional kullanılır."]]}
+]}
+];
+
+let currentLevel=0,currentLesson=0,questionIndex=0,answered=false;
+function selectLevel(i){
+ currentLevel=i;show("lessons");
+ document.getElementById("lessonListTitle").textContent=courses[i].name+" SEVİYESİ";
+ const area=document.getElementById("lessonButtons");area.innerHTML="";
+ courses[i].lessons.forEach((item,index)=>{
+  const b=document.createElement("button");b.textContent=item.title;b.onclick=()=>openLesson(index);area.appendChild(b);
+ });
+}
+function openLesson(i){
+ currentLesson=i;const item=courses[currentLevel].lessons[i];show("lesson");
+ document.getElementById("topicTitle").textContent=item.title;
+ document.getElementById("topicContent").innerHTML=item.content;
+}
+function showExamples(){show("examples");document.getElementById("examplesContent").innerHTML=courses[currentLevel].lessons[currentLesson].examples;}
+function showReview(){show("review");document.getElementById("reviewContent").innerHTML=courses[currentLevel].lessons[currentLesson].review;}
+function beginQuiz(){questionIndex=0;quizCorrect=0;show("quiz");loadQuestion();}
+function loadQuestion(){
+ answered=false;const questions=courses[currentLevel].lessons[currentLesson].questions;const q=questions[questionIndex];
+ document.getElementById("quizTitle").textContent=courses[currentLevel].name+" • "+courses[currentLevel].lessons[currentLesson].title;
+ document.getElementById("question").textContent=q[0];
+ document.getElementById("progress").textContent="Soru "+(questionIndex+1)+" / "+questions.length+" | Doğru: "+quizCorrect;
+ document.getElementById("feedback").textContent="";document.getElementById("nextBtn").style.display="none";
+ const area=document.getElementById("answers");area.innerHTML="";
+ q[1].forEach((answer,i)=>{const b=document.createElement("button");b.className="option";b.textContent=answer;b.onclick=()=>checkAnswer(i);area.appendChild(b);});
+}
+function checkAnswer(choice){
+ if(answered)return;answered=true;
+ const q=courses[currentLevel].lessons[currentLesson].questions[questionIndex];
+ document.querySelectorAll(".option").forEach(b=>b.disabled=true);
+ const feedback=document.getElementById("feedback");
+ if(choice===q[2]){quizCorrect++;addPoints(10);feedback.style.color="#00ff99";feedback.textContent="✓ DOĞRU! +10 PUAN! "+q[3];}
+ else{feedback.style.color="#ff718a";feedback.textContent="✗ Doğru cevap: "+q[1][q[2]]+". "+q[3];}
+ document.getElementById("progress").textContent="Soru "+(questionIndex+1)+" / "+courses[currentLevel].lessons[currentLesson].questions.length+" | Doğru: "+quizCorrect;
+ document.getElementById("nextBtn").style.display="inline-block";
+}
+function nextQuestion(){
+ if(!answered)return;questionIndex++;const questions=courses[currentLevel].lessons[currentLesson].questions;
+ if(questionIndex>=questions.length){
+  const rewards=finishLesson();show("result");
+  let message="Bu konunun testini tamamladın!<br><br>";
+  message+="Doğru cevap: "+quizCorrect+" / "+questions.length+"<br>";
+  message+="Kazandığın doğru cevap puanı: "+(quizCorrect*10)+"<br>";
+  if(rewards.bonus>0)message+="Konu tamamlama bonusu: +"+rewards.bonus+"<br>";
+  else message+="Bu konu için tamamlama bonusunu daha önce aldın.<br>";
+  if(rewards.levelBonus>0)message+="🎉 SEVİYE TAMAMLANDI! +"+rewards.levelBonus+" bonus puan!<br>";
+  message+="<br><b>Toplam puanın: "+totalScore+"</b>";
+  document.getElementById("resultText").innerHTML=message;
+ }else{loadQuestion();}
+}
+function nextLesson(){
+ if(currentLesson+1<courses[currentLevel].lessons.length)openLesson(currentLesson+1);
+ else show("lessons");
+}
+show("home");
+
+if("serviceWorker" in navigator){
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(err=>console.log("Service worker:",err)));
+}
+</script>
+</body>
+</html>
